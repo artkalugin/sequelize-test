@@ -1,5 +1,5 @@
-const express = require('express')
-const { Sequelize, DataTypes } = require('sequelize')
+import express from 'express'
+import { Sequelize, DataTypes } from 'sequelize'
 
 const app = express()
 
@@ -13,11 +13,13 @@ const sequelize = new Sequelize(
      }
    )
    
-sequelize.authenticate().then(() => {
-    console.log('Connection has been established successfully.')
-}).catch((error) => {
+try {
+    await sequelize.authenticate()
+    console.log('Connection established successfully!')
+}
+catch (error) {
     console.error('Unable to connect to the database: ', error)
-})
+}
 
 const User = sequelize.define('users', {
     name: {
@@ -41,32 +43,38 @@ const User = sequelize.define('users', {
     }
 })
 
-sequelize.sync().then(() => {
-    console.log('User table created successfully!')
-}).catch((error) => {
+try {
+    await sequelize.sync()
+    console.log('Users table created successfully!')
+}
+catch (error) {
     console.error('Unable to create table: ', error)
+}
+
+app.get('/list', async (req, res) => {
+    try {
+        const users = await User.findAll()
+        res.send(users)
+    }
+    catch (error) {
+        res.send('Failed to retrieve data: ' + error)
+    }
 })
 
-app.get('/list', (req, res) => {
-    User.findAll().then(r => {
-        res.send(r)
-    }).catch((err) => {
-        res.send('Failed to retrieve data: ' + err)
-    })
-})
-
-app.get('/create', (req, res) => {
-    User.create({
-        name: 'Jane',
-        lastname: 'Smith',
-        age: 23,
-        email: 'jack@smith.com',
-        password: 'qwerty123'
-    }).then(r => {
-        res.send(r)
-    }).catch((err) => {
-        res.send('Failed to create new user: ' + err)
-    })
+app.get('/create', async (req, res) => {
+    try {
+        const user = await User.create({
+            name: 'Jane',
+            lastname: 'Smith',
+            age: 23,
+            email: 'jack@smith.com',
+            password: 'qwerty123'
+        })
+        res.send('Created user: ' + JSON.stringify(user))
+    }
+    catch (error) {
+        res.send('Failed to create new user: ' + error)
+    }
 })
 
 app.listen(5000, () => {
